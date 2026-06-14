@@ -1,7 +1,5 @@
-import { UtilitiesDashboard } from "@/components/UtilitiesDashboard";
+import { redirect } from "next/navigation";
 
-export const metadata = { title: "Gasutamo — Upendo System" };
-
-export default function GasutamoPage() {
-  return <UtilitiesDashboard />;
+export default function GasutamoRedirect() {
+  redirect("/amafaranga");
 }

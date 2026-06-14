@@ -9,9 +9,9 @@ const GOLD_L   = "#F4C542";
 const SANS     = "'DM Sans', system-ui, sans-serif";
 
 const PAGES = [
-  { href: "/",         label: "Raporo",   sub: "Dashboard" },
-  { href: "/abakozi",  label: "Abakozi",  sub: "Employees" },
-  { href: "/gasutamo", label: "Gasutamo", sub: "Utilities" },
+  { href: "/",           label: "Raporo",     sub: "Dashboard", match: "exact" as const },
+  { href: "/abakozi",    label: "Abakozi",    sub: "Employees", match: "prefix" as const },
+  { href: "/amafaranga", label: "Amafaranga", sub: "Expenses",  match: "prefix" as const },
 ];
 
 export function Navigation() {
@@ -61,8 +61,11 @@ export function Navigation() {
 
         {/* Page links */}
         <div style={{ display: "flex", alignItems: "center", gap: 2, flex: 1 }}>
-          {PAGES.map(({ href, label, sub }) => {
-            const active = pathname === href;
+          {PAGES.map(({ href, label, sub, match }) => {
+            const active =
+              match === "exact"
+                ? pathname === href
+                : pathname === href || pathname.startsWith(href + "/");
             return (
               <Link
                 key={href}

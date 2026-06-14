@@ -1,6 +1,7 @@
 "use client";
 
 import { CSSProperties, FormEvent, useEffect, useState } from "react";
+import Link from "next/link";
 
 type Employee = {
   _id: string;
@@ -465,14 +466,25 @@ export function EmployeesDashboard() {
                           </button>
                         </td>
                         <td style={{ padding: "13px 14px" }}>
-                          <button
-                            onClick={() => void deleteEmp(emp._id)}
-                            style={{
-                              padding: "5px 12px", borderRadius: 7, fontSize: 12,
-                              background: "#FFF5F5", color: "#B91C1C",
-                              border: "1px solid #FECACA", cursor: "pointer", fontFamily: SANS,
-                            }}
-                          >Siba</button>
+                          <div style={{ display: "flex", gap: 6 }}>
+                            <Link
+                              href={`/abakozi/${emp._id}`}
+                              style={{
+                                padding: "5px 14px", borderRadius: 7, fontSize: 12, fontWeight: 600,
+                                background: "#F0FDF4", color: "#15803D",
+                                border: "1px solid #BBF7D0", cursor: "pointer",
+                                fontFamily: SANS, textDecoration: "none", whiteSpace: "nowrap",
+                              }}
+                            >Reba / Avansi</Link>
+                            <button
+                              onClick={() => void deleteEmp(emp._id)}
+                              style={{
+                                padding: "5px 12px", borderRadius: 7, fontSize: 12,
+                                background: "#FFF5F5", color: "#B91C1C",
+                                border: "1px solid #FECACA", cursor: "pointer", fontFamily: SANS,
+                              }}
+                            >Siba</button>
+                          </div>
                         </td>
                       </tr>
                     );
