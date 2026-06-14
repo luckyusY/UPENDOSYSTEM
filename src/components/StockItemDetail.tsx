@@ -131,14 +131,15 @@ export function StockItemDetail({ itemId }: { itemId: string }) {
     setMessage(null);
     const fd = new FormData(e.currentTarget);
     const packSize = item?.packSize ?? 1;
-    const hasPacks = packSize > 1 && !!item?.packUnit;
+    const hasPacks = packSize > 1;
+    const packLbl  = item?.packUnit || "agasanduku";
     const packs    = Number(mvPacks) || 0;
     const loose    = Number(mvLoose) || 0;
     const baseQty  = hasPacks ? packs * packSize + loose : loose;
 
     let reason = String(fd.get("reason") || "");
     if (hasPacks && packs > 0) {
-      const tag = `${packs} ${item?.packUnit}${loose > 0 ? ` + ${loose} ${item?.unit}` : ""}`;
+      const tag = `${packs} ${packLbl}${loose > 0 ? ` + ${loose} ${item?.unit}` : ""}`;
       reason = reason ? `${reason} · ${tag}` : tag;
     }
 
@@ -214,8 +215,8 @@ export function StockItemDetail({ itemId }: { itemId: string }) {
               </h1>
               <p style={{ color: "#A8D5B5", fontSize: 14, marginTop: 4 }}>
                 {cat?.label}{item?.supplier ? `  ·  ${item.supplier}` : ""}
-                {item && item.packSize > 1 && item.packUnit
-                  ? `  ·  1 ${item.packUnit} = ${item.packSize} ${item.unit}`
+                {item && item.packSize > 1
+                  ? `  ·  1 ${item.packUnit || "agasanduku"} = ${item.packSize} ${item.unit}`
                   : ""}
               </p>
             </div>
@@ -230,8 +231,8 @@ export function StockItemDetail({ itemId }: { itemId: string }) {
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5" style={{ marginBottom: 22 }}>
           <SummaryTile
             label="Ingano isigaye"
-            value={item ? packBreakdown(item.quantity, item.packSize, item.packUnit, item.unit) : "—"}
-            sub={item && item.packSize > 1 && item.packUnit ? `${num(item.quantity)} ${item.unit}` : undefined}
+            value={item ? packBreakdown(item.quantity, item.packSize, item.packUnit || "agasanduku", item.unit) : "—"}
+            sub={item && item.packSize > 1 ? `${num(item.quantity)} ${item.unit}` : undefined}
             tone={low ? "bad" : "net"}
             big
           />
@@ -286,7 +287,7 @@ export function StockItemDetail({ itemId }: { itemId: string }) {
               <div style={{ marginBottom: 14 }}>
                 <label style={labelSt}>Ingano</label>
 
-                {item && item.packSize > 1 && item.packUnit ? (
+                {item && item.packSize > 1 ? (
                   <>
                     <div style={{ display: "flex", gap: 8 }}>
                       <div style={{ flex: 1 }}>
@@ -297,7 +298,7 @@ export function StockItemDetail({ itemId }: { itemId: string }) {
                           placeholder="0"
                           style={inputSt}
                         />
-                        <p style={{ fontSize: 11, color: MUTED, marginTop: 4, textAlign: "center" }}>{item.packUnit}</p>
+                        <p style={{ fontSize: 11, color: MUTED, marginTop: 4, textAlign: "center" }}>{item.packUnit || "agasanduku"}</p>
                       </div>
                       <div style={{ flex: 1 }}>
                         <input
@@ -313,7 +314,7 @@ export function StockItemDetail({ itemId }: { itemId: string }) {
                     {(Number(mvPacks) > 0 || Number(mvLoose) > 0) && (
                       <p style={{ fontSize: 12, color: FOREST_L, fontWeight: 600, marginTop: 6 }}>
                         = {(Number(mvPacks) || 0) * item.packSize + (Number(mvLoose) || 0)} {item.unit}
-                        {" "}({Number(mvPacks) || 0} {item.packUnit} × {item.packSize} + {Number(mvLoose) || 0})
+                        {" "}({Number(mvPacks) || 0} {item.packUnit || "agasanduku"} × {item.packSize} + {Number(mvLoose) || 0})
                       </p>
                     )}
                   </>

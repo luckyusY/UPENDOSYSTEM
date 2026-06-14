@@ -85,7 +85,8 @@ export function StockDashboard() {
   const [fStartLoose, setFStartLoose] = useState("");
 
   const packSizeN = Math.max(Number(fPackSize) || 1, 1);
-  const hasPacks  = packSizeN > 1 && fPackUnit.trim() !== "";
+  const hasPacks  = packSizeN > 1;
+  const packLabel = fPackUnit.trim() || "agasanduku";
   const startQty  = hasPacks
     ? (Number(fStartPacks) || 0) * packSizeN + (Number(fStartLoose) || 0)
     : (Number(fStartLoose) || 0);
@@ -150,7 +151,7 @@ export function StockDashboard() {
           category:     fd.get("category"),
           unit:         fd.get("unit"),
           packSize:     packSizeN,
-          packUnit:     fPackUnit,
+          packUnit:     hasPacks ? packLabel : "",
           quantity:     startQty,
           reorderLevel: Number(fd.get("reorderLevel") || 0),
           unitCost:     Number(fd.get("unitCost") || 0),
@@ -327,11 +328,13 @@ export function StockDashboard() {
                   <input
                     value={fPackUnit}
                     onChange={(e) => setFPackUnit(e.target.value)}
-                    placeholder="Nk'ubuntu: agasanduku, kasi"
+                    placeholder="agasanduku, kasi, carton..."
                     style={inputSt}
                   />
                   <p style={{ fontSize: 11, color: MUTED, marginTop: 5 }}>
-                    Sigara ubusa niba kigurishwa kimwe kimwe gusa.
+                    {hasPacks
+                      ? `Idakuwemo, hakoreshwa "${packLabel}".`
+                      : "Sigara ubusa niba kigurishwa kimwe kimwe gusa."}
                   </p>
                 </div>
                 <div>
@@ -359,7 +362,7 @@ export function StockDashboard() {
                             placeholder="0"
                             style={inputSt}
                           />
-                          <p style={{ fontSize: 11, color: MUTED, marginTop: 4, textAlign: "center" }}>{fPackUnit}</p>
+                          <p style={{ fontSize: 11, color: MUTED, marginTop: 4, textAlign: "center" }}>{packLabel}</p>
                         </div>
                         <div style={{ flex: 1 }}>
                           <input
@@ -514,9 +517,9 @@ export function StockDashboard() {
                               fontSize: 10, fontWeight: 700, background: "#FFEDD5", color: "#9A3412",
                             }}>HASI</span>
                           )}
-                          {it.packSize > 1 && it.packUnit && (
+                          {it.packSize > 1 && (
                             <div style={{ fontSize: 11, color: MUTED, marginTop: 3 }}>
-                              {packBreakdown(it.quantity, it.packSize, it.packUnit, it.unit)}
+                              {packBreakdown(it.quantity, it.packSize, it.packUnit || "agasanduku", it.unit)}
                             </div>
                           )}
                         </td>
