@@ -13,6 +13,8 @@ type StockItem = {
   name: string;
   category: string;
   unit: string;
+  packSize: number;
+  packUnit: string;
   quantity: number;
   reorderLevel: number;
   unitCost: number;
@@ -41,6 +43,17 @@ function money(value: number) {
 
 function num(value: number) {
   return (Math.round((value || 0) * 100) / 100).toString();
+}
+
+// "= 5 agasanduku + 3 icupa" style breakdown of a base-unit quantity.
+function packBreakdown(qty: number, packSize: number, packUnit: string, unit: string) {
+  if (packSize <= 1) return "";
+  const packs = Math.floor(qty / packSize);
+  const rest  = qty - packs * packSize;
+  const parts: string[] = [];
+  if (packs > 0) parts.push(`${packs} ${packUnit}`);
+  if (rest > 0)  parts.push(`${rest} ${unit}`);
+  return "= " + (parts.length ? parts.join(" + ") : `0 ${packUnit}`);
 }
 
 const labelSt: CSSProperties = {
@@ -116,6 +129,8 @@ export function StockDashboard() {
           name:         fd.get("name"),
           category:     fd.get("category"),
           unit:         fd.get("unit"),
+          packSize:     Number(fd.get("packSize") || 1),
+          packUnit:     fd.get("packUnit"),
           quantity:     Number(fd.get("quantity") || 0),
           reorderLevel: Number(fd.get("reorderLevel") || 0),
           unitCost:     Number(fd.get("unitCost") || 0),
@@ -280,14 +295,28 @@ export function StockDashboard() {
                   </select>
                 </div>
                 <div>
-                  <label style={labelSt}>Igipimo (unit)</label>
+                  <label style={labelSt}>Igipimo cyo kugurisha (unit)</label>
                   <input name="unit" list="stock-units" defaultValue="icupa" style={inputSt} />
                   <datalist id="stock-units">
                     {STOCK_UNITS.map((u) => <option key={u} value={u} />)}
                   </datalist>
                 </div>
                 <div>
-                  <label style={labelSt}>Ingano isanzwe ihari</label>
+                  <label style={labelSt}>Igipfunyika (package)</label>
+                  <input name="packUnit" placeholder="Nk'ubuntu: agasanduku, kasi" style={inputSt} />
+                  <p style={{ fontSize: 11, color: MUTED, marginTop: 5 }}>
+                    Sigara ubusa niba kigurishwa kimwe kimwe gusa.
+                  </p>
+                </div>
+                <div>
+                  <label style={labelSt}>Bingahe muri buri gifunyika?</label>
+                  <input name="packSize" type="number" min="1" step="1" defaultValue="1" style={inputSt} />
+                  <p style={{ fontSize: 11, color: MUTED, marginTop: 5 }}>
+                    Urugero: agasanduku ka Primus = 24 amacupa.
+                  </p>
+                </div>
+                <div>
+                  <label style={labelSt}>Ingano isanzwe ihari (mu bice)</label>
                   <input name="quantity" type="number" min="0" step="1" defaultValue="0" style={inputSt} />
                 </div>
                 <div>
@@ -417,6 +446,11 @@ export function StockDashboard() {
                               marginLeft: 8, padding: "2px 8px", borderRadius: 999,
                               fontSize: 10, fontWeight: 700, background: "#FFEDD5", color: "#9A3412",
                             }}>HASI</span>
+                          )}
+                          {it.packSize > 1 && it.packUnit && (
+                            <div style={{ fontSize: 11, color: MUTED, marginTop: 3 }}>
+                              {packBreakdown(it.quantity, it.packSize, it.packUnit, it.unit)}
+                            </div>
                           )}
                         </td>
                         <td style={{ padding: "13px 14px", color: "#4A4A4A" }}>{money(it.unitCost)}</td>

@@ -9,6 +9,8 @@ type StockItem = {
   name: string;
   category: string;
   unit: string;
+  packSize: number;
+  packUnit: string;
   quantity: number;
   reorderLevel: number;
   unitCost: number;
@@ -75,6 +77,8 @@ export function StockItemDetail({ itemId }: { itemId: string }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving]   = useState(false);
   const [mvType, setMvType]   = useState<MovementType>("kwinjiza");
+  const [mvMode, setMvMode]   = useState<"unit" | "pack">("unit");
+  const [mvQty, setMvQty]     = useState("");
   const [message, setMessage] = useState<{ text: string; ok: boolean } | null>(null);
 
   async function load() {
@@ -115,6 +119,17 @@ export function StockItemDetail({ itemId }: { itemId: string }) {
     setSaving(true);
     setMessage(null);
     const fd = new FormData(e.currentTarget);
+    const packSize = item?.packSize ?? 1;
+    const usePack  = mvMode === "pack" && packSize > 1;
+    const entered  = Number(mvQty || 0);
+    const baseQty  = usePack ? entered * packSize : entered;
+
+    let reason = String(fd.get("reason") || "");
+    if (usePack) {
+      const tag = `${entered} ${item?.packUnit || "pack"} × ${packSize}`;
+      reason = reason ? `${reason} · ${tag}` : tag;
+    }
+
     try {
       const res = await fetch(`/api/stock/${itemId}/movements`, {
         method: "POST",
@@ -122,12 +137,14 @@ export function StockItemDetail({ itemId }: { itemId: string }) {
         body: JSON.stringify({
           date:     fd.get("date"),
           type:     fd.get("type"),
-          quantity: Number(fd.get("quantity") || 0),
-          reason:   fd.get("reason"),
+          quantity: baseQty,
+          reason,
         }),
       });
       if (!res.ok) throw new Error();
       e.currentTarget.reset();
+      setMvQty("");
+      setMvMode("unit");
       setMessage({ text: "Byanditswe neza.", ok: true });
     } catch {
       setMessage({ text: "Byatinze kwemezwa. Reba ku mateka niba byabitswe.", ok: false });
@@ -179,6 +196,9 @@ export function StockItemDetail({ itemId }: { itemId: string }) {
               </h1>
               <p style={{ color: "#A8D5B5", fontSize: 14, marginTop: 4 }}>
                 {cat?.label}{item?.supplier ? `  ·  ${item.supplier}` : ""}
+                {item && item.packSize > 1 && item.packUnit
+                  ? `  ·  1 ${item.packUnit} = ${item.packSize} ${item.unit}`
+                  : ""}
               </p>
             </div>
           </div>
@@ -240,8 +260,48 @@ export function StockItemDetail({ itemId }: { itemId: string }) {
                 </div>
               </div>
               <div style={{ marginBottom: 14 }}>
-                <label style={labelSt}>Ingano {item ? `(${item.unit})` : ""}</label>
-                <input name="quantity" type="number" min="0" step="1" defaultValue="0" required style={inputSt} />
+                <label style={labelSt}>Ingano</label>
+
+                {item && item.packSize > 1 && item.packUnit && (
+                  <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
+                    {([
+                      ["unit", `Ibice (${item.unit})`],
+                      ["pack", `Igifunyika (${item.packUnit})`],
+                    ] as const).map(([mode, label]) => {
+                      const active = mvMode === mode;
+                      return (
+                        <button
+                          key={mode} type="button" onClick={() => setMvMode(mode)}
+                          style={{
+                            flex: 1, padding: "8px 10px", borderRadius: 9, fontSize: 13, fontWeight: 600,
+                            border: `1.5px solid ${active ? FOREST : BORDER}`,
+                            background: active ? FOREST : INPUT_BG,
+                            color: active ? "#fff" : MUTED, cursor: "pointer", fontFamily: SANS,
+                          }}
+                        >{label}</button>
+                      );
+                    })}
+                  </div>
+                )}
+
+                <input
+                  type="number" min="0" step="1" required
+                  value={mvQty}
+                  onChange={(e) => setMvQty(e.target.value)}
+                  placeholder={
+                    item && mvMode === "pack" && item.packSize > 1
+                      ? `Ingano mu ma${item.packUnit}`
+                      : `Ingano mu ${item?.unit ?? "bice"}`
+                  }
+                  style={inputSt}
+                />
+
+                {item && mvMode === "pack" && item.packSize > 1 && Number(mvQty) > 0 && (
+                  <p style={{ fontSize: 12, color: FOREST_L, fontWeight: 600, marginTop: 6 }}>
+                    = {Number(mvQty) * item.packSize} {item.unit}
+                    {" "}({mvQty} {item.packUnit} × {item.packSize})
+                  </p>
+                )}
               </div>
               <div style={{ marginBottom: 14 }}>
                 <label style={labelSt}>Itariki</label>

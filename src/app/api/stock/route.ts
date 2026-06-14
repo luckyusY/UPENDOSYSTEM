@@ -23,6 +23,8 @@ export async function POST(request: Request) {
       name:         body.name?.trim() || "—",
       category:     body.category || "ibindi",
       unit:         body.unit?.trim() || "icupa",
+      packSize:     Math.max(Number(body.packSize) || 1, 1),
+      packUnit:     body.packUnit?.trim() || "",
       quantity:     Math.max(Number(body.quantity) || 0, 0),
       reorderLevel: Math.max(Number(body.reorderLevel) || 0, 0),
       unitCost:     Math.max(Number(body.unitCost) || 0, 0),
