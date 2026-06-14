@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { connectMongo } from "@/lib/mongodb";
 import { Employee, type EmployeeInput } from "@/models/Employee";
 
+export const runtime = "nodejs";
+export const maxDuration = 10;
+
 export async function GET() {
   try {
     await connectMongo();

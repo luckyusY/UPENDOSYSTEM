@@ -125,11 +125,15 @@ export function EmployeesDashboard() {
       e.currentTarget.reset();
       setShowForm(false);
       setMessage({ text: "Umukozi wongerewe neza.", ok: true });
-      await load();
     } catch {
-      setMessage({ text: "Wongera umukozi byanze. Ongera ugerageze.", ok: false });
+      setMessage({
+        text: "Byatinze kwemezwa. Reba ku rutonde niba umukozi yabitswe.",
+        ok: false,
+      });
     } finally {
       setSaving(false);
+      // Slow Vercel/Atlas responses often still save; re-read to surface it.
+      await load();
     }
   }
 

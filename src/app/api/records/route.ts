@@ -5,6 +5,9 @@ import {
   type OperationRecordInput,
 } from "@/models/OperationRecord";
 
+export const runtime = "nodejs";
+export const maxDuration = 10;
+
 function cleanNumber(value: unknown) {
   const parsed = Number(value ?? 0);
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;

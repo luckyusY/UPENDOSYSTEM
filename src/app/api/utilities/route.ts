@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { connectMongo } from "@/lib/mongodb";
 import { UtilityExpense, type UtilityExpenseInput } from "@/models/UtilityExpense";
 
+export const runtime = "nodejs";
+export const maxDuration = 10;
+
 export async function GET() {
   try {
     await connectMongo();

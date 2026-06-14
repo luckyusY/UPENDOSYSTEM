@@ -175,11 +175,16 @@ export function OperationsDashboard() {
       if (!response.ok) throw new Error("save failed");
       event.currentTarget.reset();
       setMessage({ text: "Raporo yabitswe neza.", ok: true });
-      await loadRecords();
     } catch {
-      setMessage({ text: "Kubika byanze. Reba ko MongoDB ikora neza.", ok: false });
+      setMessage({
+        text: "Byatinze kwemezwa. Reba ku rutonde hepfo niba raporo yabitswe.",
+        ok: false,
+      });
     } finally {
       setSaving(false);
+      // Always re-read: on a slow Vercel/Atlas response the write usually
+      // still succeeds even when the client times out, so this shows it.
+      await loadRecords();
     }
   }
 

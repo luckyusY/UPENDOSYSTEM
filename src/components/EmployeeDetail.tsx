@@ -131,11 +131,15 @@ export function EmployeeDetail({ employeeId }: { employeeId: string }) {
       if (!res.ok) throw new Error();
       e.currentTarget.reset();
       setMessage({ text: "Byanditswe neza.", ok: true });
-      await load();
     } catch {
-      setMessage({ text: "Kubika byanze. Ongera ugerageze.", ok: false });
+      setMessage({
+        text: "Byatinze kwemezwa. Reba ku mateka niba byabitswe.",
+        ok: false,
+      });
     } finally {
       setSaving(false);
+      // Slow Vercel/Atlas responses often still save; re-read to surface it.
+      await load();
     }
   }
 
