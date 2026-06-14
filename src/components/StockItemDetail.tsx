@@ -56,6 +56,17 @@ function num(value: number) {
   return (Math.round((value || 0) * 100) / 100).toString();
 }
 
+// "3 agasanduku + 4 icupa" breakdown of a base-unit quantity.
+function packBreakdown(qty: number, packSize: number, packUnit: string, unit: string) {
+  if (packSize <= 1 || !packUnit) return `${num(qty)} ${unit}`;
+  const packs = Math.floor(qty / packSize);
+  const rest  = qty - packs * packSize;
+  const parts: string[] = [];
+  if (packs > 0) parts.push(`${packs} ${packUnit}`);
+  if (rest > 0)  parts.push(`${rest} ${unit}`);
+  return parts.length ? parts.join(" + ") : `0 ${packUnit}`;
+}
+
 const TODAY = new Date().toISOString().slice(0, 10);
 
 const labelSt: CSSProperties = {
@@ -77,8 +88,8 @@ export function StockItemDetail({ itemId }: { itemId: string }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving]   = useState(false);
   const [mvType, setMvType]   = useState<MovementType>("kwinjiza");
-  const [mvMode, setMvMode]   = useState<"unit" | "pack">("unit");
-  const [mvQty, setMvQty]     = useState("");
+  const [mvPacks, setMvPacks] = useState("");
+  const [mvLoose, setMvLoose] = useState("");
   const [message, setMessage] = useState<{ text: string; ok: boolean } | null>(null);
 
   async function load() {
@@ -120,14 +131,21 @@ export function StockItemDetail({ itemId }: { itemId: string }) {
     setMessage(null);
     const fd = new FormData(e.currentTarget);
     const packSize = item?.packSize ?? 1;
-    const usePack  = mvMode === "pack" && packSize > 1;
-    const entered  = Number(mvQty || 0);
-    const baseQty  = usePack ? entered * packSize : entered;
+    const hasPacks = packSize > 1 && !!item?.packUnit;
+    const packs    = Number(mvPacks) || 0;
+    const loose    = Number(mvLoose) || 0;
+    const baseQty  = hasPacks ? packs * packSize + loose : loose;
 
     let reason = String(fd.get("reason") || "");
-    if (usePack) {
-      const tag = `${entered} ${item?.packUnit || "pack"} × ${packSize}`;
+    if (hasPacks && packs > 0) {
+      const tag = `${packs} ${item?.packUnit}${loose > 0 ? ` + ${loose} ${item?.unit}` : ""}`;
       reason = reason ? `${reason} · ${tag}` : tag;
+    }
+
+    if (baseQty <= 0) {
+      setSaving(false);
+      setMessage({ text: "Andika ingano irenze zeru.", ok: false });
+      return;
     }
 
     try {
@@ -143,8 +161,8 @@ export function StockItemDetail({ itemId }: { itemId: string }) {
       });
       if (!res.ok) throw new Error();
       e.currentTarget.reset();
-      setMvQty("");
-      setMvMode("unit");
+      setMvPacks("");
+      setMvLoose("");
       setMessage({ text: "Byanditswe neza.", ok: true });
     } catch {
       setMessage({ text: "Byatinze kwemezwa. Reba ku mateka niba byabitswe.", ok: false });
@@ -210,7 +228,13 @@ export function StockItemDetail({ itemId }: { itemId: string }) {
 
         {/* summary */}
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5" style={{ marginBottom: 22 }}>
-          <SummaryTile label="Ingano isigaye" value={item ? `${num(item.quantity)} ${item.unit}` : "—"} tone={low ? "bad" : "net"} big />
+          <SummaryTile
+            label="Ingano isigaye"
+            value={item ? packBreakdown(item.quantity, item.packSize, item.packUnit, item.unit) : "—"}
+            sub={item && item.packSize > 1 && item.packUnit ? `${num(item.quantity)} ${item.unit}` : undefined}
+            tone={low ? "bad" : "net"}
+            big
+          />
           <SummaryTile label="Byinjiye (+)"   value={num(sums.kwinjiza)} tone="good" />
           <SummaryTile label="Byasohotse (−)" value={num(sums.gusohoka)} tone="neutral" />
           <SummaryTile label="Byangiritse (−)" value={num(sums.byangiritse)} tone="bad" />
@@ -262,45 +286,45 @@ export function StockItemDetail({ itemId }: { itemId: string }) {
               <div style={{ marginBottom: 14 }}>
                 <label style={labelSt}>Ingano</label>
 
-                {item && item.packSize > 1 && item.packUnit && (
-                  <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
-                    {([
-                      ["unit", `Ibice (${item.unit})`],
-                      ["pack", `Igifunyika (${item.packUnit})`],
-                    ] as const).map(([mode, label]) => {
-                      const active = mvMode === mode;
-                      return (
-                        <button
-                          key={mode} type="button" onClick={() => setMvMode(mode)}
-                          style={{
-                            flex: 1, padding: "8px 10px", borderRadius: 9, fontSize: 13, fontWeight: 600,
-                            border: `1.5px solid ${active ? FOREST : BORDER}`,
-                            background: active ? FOREST : INPUT_BG,
-                            color: active ? "#fff" : MUTED, cursor: "pointer", fontFamily: SANS,
-                          }}
-                        >{label}</button>
-                      );
-                    })}
-                  </div>
-                )}
-
-                <input
-                  type="number" min="0" step="1" required
-                  value={mvQty}
-                  onChange={(e) => setMvQty(e.target.value)}
-                  placeholder={
-                    item && mvMode === "pack" && item.packSize > 1
-                      ? `Ingano mu ma${item.packUnit}`
-                      : `Ingano mu ${item?.unit ?? "bice"}`
-                  }
-                  style={inputSt}
-                />
-
-                {item && mvMode === "pack" && item.packSize > 1 && Number(mvQty) > 0 && (
-                  <p style={{ fontSize: 12, color: FOREST_L, fontWeight: 600, marginTop: 6 }}>
-                    = {Number(mvQty) * item.packSize} {item.unit}
-                    {" "}({mvQty} {item.packUnit} × {item.packSize})
-                  </p>
+                {item && item.packSize > 1 && item.packUnit ? (
+                  <>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <div style={{ flex: 1 }}>
+                        <input
+                          type="number" min="0" step="1"
+                          value={mvPacks}
+                          onChange={(e) => setMvPacks(e.target.value)}
+                          placeholder="0"
+                          style={inputSt}
+                        />
+                        <p style={{ fontSize: 11, color: MUTED, marginTop: 4, textAlign: "center" }}>{item.packUnit}</p>
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <input
+                          type="number" min="0" step="1"
+                          value={mvLoose}
+                          onChange={(e) => setMvLoose(e.target.value)}
+                          placeholder="0"
+                          style={inputSt}
+                        />
+                        <p style={{ fontSize: 11, color: MUTED, marginTop: 4, textAlign: "center" }}>{item.unit} (loose)</p>
+                      </div>
+                    </div>
+                    {(Number(mvPacks) > 0 || Number(mvLoose) > 0) && (
+                      <p style={{ fontSize: 12, color: FOREST_L, fontWeight: 600, marginTop: 6 }}>
+                        = {(Number(mvPacks) || 0) * item.packSize + (Number(mvLoose) || 0)} {item.unit}
+                        {" "}({Number(mvPacks) || 0} {item.packUnit} × {item.packSize} + {Number(mvLoose) || 0})
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <input
+                    type="number" min="0" step="1"
+                    value={mvLoose}
+                    onChange={(e) => setMvLoose(e.target.value)}
+                    placeholder={`Ingano mu ${item?.unit ?? "bice"}`}
+                    style={inputSt}
+                  />
                 )}
               </div>
               <div style={{ marginBottom: 14 }}>
@@ -423,9 +447,9 @@ export function StockItemDetail({ itemId }: { itemId: string }) {
 }
 
 function SummaryTile({
-  label, value, tone = "neutral", big,
+  label, value, sub, tone = "neutral", big,
 }: {
-  label: string; value: string;
+  label: string; value: string; sub?: string;
   tone?: "neutral" | "good" | "bad" | "net"; big?: boolean;
 }) {
   const map = {
@@ -444,6 +468,12 @@ function SummaryTile({
       <p style={{ fontSize: big ? 20 : 17, fontWeight: 800, color: map.color, letterSpacing: "-0.02em", fontFamily: SANS }}>
         {value}
       </p>
+      {sub && (
+        <p style={{
+          fontSize: 11, fontWeight: 500, marginTop: 3, fontFamily: SANS,
+          color: tone === "net" ? "rgba(255,255,255,0.6)" : MUTED,
+        }}>{sub}</p>
+      )}
     </div>
   );
 }

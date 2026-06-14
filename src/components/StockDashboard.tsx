@@ -77,6 +77,26 @@ export function StockDashboard() {
   const [filterCat, setFilterCat] = useState<string>("all");
   const [message, setMessage]   = useState<{ text: string; ok: boolean } | null>(null);
 
+  // Controlled fields so the "starting quantity" can be entered as
+  // packages + loose units once the user types a pack size.
+  const [fPackSize, setFPackSize]   = useState("1");
+  const [fPackUnit, setFPackUnit]   = useState("");
+  const [fStartPacks, setFStartPacks] = useState("");
+  const [fStartLoose, setFStartLoose] = useState("");
+
+  const packSizeN = Math.max(Number(fPackSize) || 1, 1);
+  const hasPacks  = packSizeN > 1 && fPackUnit.trim() !== "";
+  const startQty  = hasPacks
+    ? (Number(fStartPacks) || 0) * packSizeN + (Number(fStartLoose) || 0)
+    : (Number(fStartLoose) || 0);
+
+  function resetPackFields() {
+    setFPackSize("1");
+    setFPackUnit("");
+    setFStartPacks("");
+    setFStartLoose("");
+  }
+
   async function load() {
     setLoading(true);
     try {
@@ -129,9 +149,9 @@ export function StockDashboard() {
           name:         fd.get("name"),
           category:     fd.get("category"),
           unit:         fd.get("unit"),
-          packSize:     Number(fd.get("packSize") || 1),
-          packUnit:     fd.get("packUnit"),
-          quantity:     Number(fd.get("quantity") || 0),
+          packSize:     packSizeN,
+          packUnit:     fPackUnit,
+          quantity:     startQty,
           reorderLevel: Number(fd.get("reorderLevel") || 0),
           unitCost:     Number(fd.get("unitCost") || 0),
           unitPrice:    Number(fd.get("unitPrice") || 0),
@@ -141,6 +161,7 @@ export function StockDashboard() {
       });
       if (!res.ok) throw new Error();
       e.currentTarget.reset();
+      resetPackFields();
       setShowForm(false);
       setMessage({ text: "Ikintu cyongerewe neza.", ok: true });
     } catch {
@@ -303,21 +324,67 @@ export function StockDashboard() {
                 </div>
                 <div>
                   <label style={labelSt}>Igipfunyika (package)</label>
-                  <input name="packUnit" placeholder="Nk'ubuntu: agasanduku, kasi" style={inputSt} />
+                  <input
+                    value={fPackUnit}
+                    onChange={(e) => setFPackUnit(e.target.value)}
+                    placeholder="Nk'ubuntu: agasanduku, kasi"
+                    style={inputSt}
+                  />
                   <p style={{ fontSize: 11, color: MUTED, marginTop: 5 }}>
                     Sigara ubusa niba kigurishwa kimwe kimwe gusa.
                   </p>
                 </div>
                 <div>
                   <label style={labelSt}>Bingahe muri buri gifunyika?</label>
-                  <input name="packSize" type="number" min="1" step="1" defaultValue="1" style={inputSt} />
+                  <input
+                    type="number" min="1" step="1"
+                    value={fPackSize}
+                    onChange={(e) => setFPackSize(e.target.value)}
+                    style={inputSt}
+                  />
                   <p style={{ fontSize: 11, color: MUTED, marginTop: 5 }}>
                     Urugero: agasanduku ka Primus = 24 amacupa.
                   </p>
                 </div>
                 <div>
-                  <label style={labelSt}>Ingano isanzwe ihari (mu bice)</label>
-                  <input name="quantity" type="number" min="0" step="1" defaultValue="0" style={inputSt} />
+                  <label style={labelSt}>Ingano isanzwe ihari</label>
+                  {hasPacks ? (
+                    <>
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <div style={{ flex: 1 }}>
+                          <input
+                            type="number" min="0" step="1"
+                            value={fStartPacks}
+                            onChange={(e) => setFStartPacks(e.target.value)}
+                            placeholder="0"
+                            style={inputSt}
+                          />
+                          <p style={{ fontSize: 11, color: MUTED, marginTop: 4, textAlign: "center" }}>{fPackUnit}</p>
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <input
+                            type="number" min="0" step="1"
+                            value={fStartLoose}
+                            onChange={(e) => setFStartLoose(e.target.value)}
+                            placeholder="0"
+                            style={inputSt}
+                          />
+                          <p style={{ fontSize: 11, color: MUTED, marginTop: 4, textAlign: "center" }}>ibice (loose)</p>
+                        </div>
+                      </div>
+                      <p style={{ fontSize: 12, color: FOREST_L, fontWeight: 600, marginTop: 4 }}>
+                        = {startQty} ({fStartPacks || 0} × {packSizeN} + {fStartLoose || 0})
+                      </p>
+                    </>
+                  ) : (
+                    <input
+                      type="number" min="0" step="1"
+                      value={fStartLoose}
+                      onChange={(e) => setFStartLoose(e.target.value)}
+                      placeholder="0"
+                      style={inputSt}
+                    />
+                  )}
                 </div>
                 <div>
                   <label style={labelSt}>Aho bigera bigomba kongerwa</label>
@@ -354,7 +421,7 @@ export function StockDashboard() {
                   {saving ? "Birabikwa..." : "Bika ikintu"}
                 </button>
                 <button
-                  type="button" onClick={() => setShowForm(false)}
+                  type="button" onClick={() => { resetPackFields(); setShowForm(false); }}
                   style={{
                     height: 46, padding: "0 20px", borderRadius: 10, border: "none",
                     background: "#F0EBE3", color: MUTED, fontFamily: SANS, fontSize: 14, cursor: "pointer",
