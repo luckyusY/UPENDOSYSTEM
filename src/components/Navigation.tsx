@@ -10,6 +10,7 @@ const SANS     = "'DM Sans', system-ui, sans-serif";
 
 const PAGES = [
   { href: "/",           label: "Raporo",     sub: "Dashboard", match: "exact" as const },
+  { href: "/ububiko",    label: "Ububiko",    sub: "Stock",     match: "prefix" as const },
   { href: "/abakozi",    label: "Abakozi",    sub: "Employees", match: "prefix" as const },
   { href: "/amafaranga", label: "Amafaranga", sub: "Expenses",  match: "prefix" as const },
 ];
